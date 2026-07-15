@@ -1,0 +1,103 @@
+# UltraPlot recipes — good-default figures
+
+Copy, adapt, render. Each is deliberately minimal but already sound and polished. All assume `import numpy as np; import ultraplot as uplt`.
+
+## 1. Multi-line comparison with a legend
+```python
+fig, ax = uplt.subplots(refwidth=3)
+ax.plot(x, Y, lw=2, cycle="colorblind", labels=["control", "treatment", "baseline"],
+        legend="b", legend_kw={"ncols": 3, "frame": False})
+ax.format(suptitle="Response over time", xlabel="time (s)", ylabel="signal (mV)",
+          grid=False)
+fig.save("~/lines.pdf")
+```
+
+## 2. Small-multiples grid with shared axes + panel letters
+```python
+fig, axs = uplt.subplots(ncols=3, nrows=2, refwidth=1.8, share=True)
+for ax, y in zip(axs, series):
+    ax.plot(x, y, lw=1.5, color="denim")
+axs.format(abc="a.", abcloc="ul", suptitle="Conditions A–F",
+           xlabel="x (units)", ylabel="y (units)",
+           toplabels=("Low", "Mid", "High"), leftlabels=("Run 1", "Run 2"))
+```
+
+## 3. 2D field with a shared outer colorbar
+```python
+fig, axs = uplt.subplots(ncols=2, refwidth=2.2)
+for ax, field in zip(axs, fields):
+    m = ax.pcolormesh(lon, lat, field, cmap="batlow", levels=11, extend="both")
+axs.format(abc="a.", suptitle="Temperature field", xlabel="x", ylabel="y")
+fig.colorbar(m, loc="b", label="T (K)", length=0.7)   # one bar for the row
+```
+
+## 4. Signed / anomaly field (diverging, centered at zero)
+```python
+fig, ax = uplt.subplots(refwidth=3)
+m = ax.contourf(anomaly, cmap="roma", levels=uplt.arange(-6, 6, 1), extend="both")
+ax.colorbar(m, loc="r", label="anomaly (K)")
+ax.format(title="Difference from climatology", xlabel="lon", ylabel="lat")
+```
+
+## 5. Correlation matrix as a labeled heatmap
+```python
+fig, ax = uplt.subplots(refwidth=3)
+m = ax.heatmap(corr, cmap="BuRd", vmin=-1, vmax=1, labels=True,
+               labels_kw={"precision": 2})
+ax.format(xticklabels=names, yticklabels=names, xrotation=45,
+          suptitle="Feature correlations")
+ax.colorbar(m, loc="r", label="Pearson r")
+```
+
+## 6. Scatter with a size legend + color legend (semantic keys)
+
+```python
+fig, ax = uplt.subplots(refwidth=3)
+ax.scatter(df.x, df.y, c=df.value, s=df.pop, cmap="viko", alpha=0.8)
+ax.numlegend(vmin=df.value.min(), vmax=df.value.max(), n=5, cmap="viko",
+             loc="ur", title="value", frameon=False)
+ax.sizelegend([10, 50, 200], labels=["S", "M", "L"], loc="lr",
+              title="population", frameon=False)
+ax.format(xlabel="x", ylabel="y", grid=False)
+```
+
+## 7. Distribution: box/violin with shaded percentile bands on a line
+
+```python
+fig, axs = uplt.subplots(ncols=2, refwidth=2.2, share=False)
+axs[0].violin(samples, cycle="colorblind")
+axs[0].format(title="Per-group distribution", xticklabels=groups)
+# line with mean + shaded IQR straight from raw samples
+axs[1].plot(x, runs, mean=True, shadedata=True, color="rose", lw=2)
+axs[1].format(title="Mean ± spread")
+axs.format(abc="a.", suptitle="Distributions")
+```
+
+## 8. Map (cartopy) with an anomaly field
+
+```python
+fig, ax = uplt.subplots(proj="robin", refwidth=4)
+m = ax.pcolormesh(lon, lat, data, cmap="roma", levels=uplt.arange(-4, 4, 0.5),
+                  extend="both")
+ax.format(coast=True, borders=True, grid=True,
+          lonlabels="b", latlabels="l", suptitle="Global anomaly")
+fig.colorbar(m, loc="b", label="anomaly", length=0.6)
+```
+
+## 9. Twin axes (two y-scales, honestly labeled)
+
+```python
+fig, ax = uplt.subplots(refwidth=3)
+ax.plot(x, temp, color="rose", lw=2)
+ax.format(ylabel="temperature (°C)", ycolor="rose", xlabel="day")
+axr = ax.alty(ylabel="precipitation (mm)", ycolor="denim")
+axr.bar(x, precip, color="denim", alpha=0.5)
+```
+
+## Render check
+Save and open every figure before declaring it done:
+
+```python
+fig.save("/tmp/uplt_check.png")   # or .pdf for the real deliverable
+```
+In this repo: `micromamba run -n ultraplot-dev python script.py`.
